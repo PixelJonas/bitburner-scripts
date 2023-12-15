@@ -1,7 +1,7 @@
 import { Server, NS } from "@ns";
+import { PURCHASED_SERVER_PREFIX } from "./contants";
 
-/** @param {import(".").NS} ns **/
-export async function searchServers(ns: NS): Promise<Array<Server>> {
+export async function getAllServers(ns: NS): Promise<Server[]> {
     let unprocessedQueue = ["home"];
     let processedQueue = [];
     while (unprocessedQueue.length > 0) {
@@ -21,8 +21,10 @@ export async function searchServers(ns: NS): Promise<Array<Server>> {
     }
 
     processedQueue = processedQueue.filter((server) => server !== "home");
-    //processedQueue = processedQueue.filter((server) => server.indexOf("pserv-") === -1);
-
 
     return processedQueue.map(s => ns.getServer(s));
+}
+
+export async function getHackableServers(ns: NS): Promise<Server[]> {
+    return (await getAllServers(ns)).filter((server) => server.hostname.indexOf(PURCHASED_SERVER_PREFIX) === -1);
 }

@@ -42,7 +42,7 @@ export async function getAllRankedServerList(ns: NS, servers: Server[]): Promise
     .filter((server: Server) => ns.getServerNumPortsRequired(server.hostname) <= availablePortHacks)
     .filter((server: Server) => {
       // ns.tprint(`Checking if ${server.requiredHackingSkill} is less than or equal to ${hackingLevel}`)
-      const thing = (server.requiredHackingSkill ?? 0) <= hackingLevel;
+      const thing = (server.requiredHackingSkill ?? 0) <= hackingLevel * 0.5;
       // ns.tprint(`${server.requiredHackingSkill} ${thing ? "is" : "is not"} less than or equal to ${hackingLevel}`)
       return thing;
     })
@@ -66,7 +66,7 @@ export async function getAllRankedServerList(ns: NS, servers: Server[]): Promise
   //calcServers.forEach((server, index) => ns.tprint(`${index}: ${server.hostname}`));
 
 
-  let firstItem, lastItem = null;
+  let firstItem: Server, lastItem: Server | null = null;
   let lastRate = 0;
   let firstRate = 0;
 
@@ -122,7 +122,7 @@ export async function copyServerFiles(ns: NS, target: string): Promise<void> {
 export async function getAttackedServers(ns: NS): Promise<Server[]> {
 
   let allServers = await getAllRankedServerList(ns, await getAllServers(ns));
-  const attackedServers = [];
+  const attackedServers: Server[] = [];
   for (let server of allServers) {
     let isAttacked = ns.getRunningScript("exploit.js", "home", server.hostname);
 

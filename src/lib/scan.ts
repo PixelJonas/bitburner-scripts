@@ -1,7 +1,7 @@
 import { Server, NS } from "@ns";
 import { PURCHASED_SERVER_PREFIX } from "lib/contants";
 
-export async function getAllServers(ns: NS): Promise<Server[]> {
+export async function getAllServers(ns: NS, includeHome = false): Promise<Server[]> {
     let unprocessedQueue = ["home"];
     let processedQueue = [];
     while (unprocessedQueue.length > 0) {
@@ -19,8 +19,9 @@ export async function getAllServers(ns: NS): Promise<Server[]> {
         unprocessedQueue.shift();
         unprocessedQueue = [...unprocessedQueue, ...itemsToAdd];
     }
-
-    processedQueue = processedQueue.filter((server) => server !== "home");
+    if (!includeHome) {
+        processedQueue = processedQueue.filter((server) => server !== "home");
+    }
     return processedQueue.map(s => ns.getServer(s));
 }
 

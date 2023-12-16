@@ -1,5 +1,5 @@
 import { Server, NS } from "@ns";
-import { PURCHASED_SERVER_PREFIX } from "./contants";
+import { PURCHASED_SERVER_PREFIX } from "lib/contants";
 
 export async function getAllServers(ns: NS): Promise<Server[]> {
     let unprocessedQueue = ["home"];

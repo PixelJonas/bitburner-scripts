@@ -1,4 +1,5 @@
 import { Server, NS } from "@ns";
+import { CONSTANTS_SCRIPT, EARLY_HACK_SCRIPT, GROW_SCRIPT, HACK_SCRIPT, WEAKEN_SCRIPT } from "lib/contants";
 
 /**
  * Get the best server we can hack with our current hacking level
@@ -83,8 +84,26 @@ export async function getBestServerToHack(ns: NS, servers: Server[]): Promise<Se
     lastRate = lastItemMoneyMax / lastItemMinDifficulty as any;
   }
 
+
   ns.print(`First server: ${JSON.stringify(firstItem, null, 2)}\nRate: ${firstRate * 100}`);
   ns.print(`Last server: ${JSON.stringify(lastItem, null, 2)}\nRate: ${lastRate * 100}`);
 
-  return calcServers[0];
+  return calcServers.filter(server => ns.hasRootAccess(server.hostname))[0];
 }
+
+export async function copyServerFiles(ns: NS, target: string): Promise<void> {
+  let filesToCopy = [
+    EARLY_HACK_SCRIPT,
+    CONSTANTS_SCRIPT,
+    WEAKEN_SCRIPT,
+    GROW_SCRIPT,
+    HACK_SCRIPT
+  ]
+  for (const file of filesToCopy) {
+    let fileExists = ns.fileExists(file, target);
+    if (!fileExists) {
+      ns.scp(file, target, "home")
+    }
+  }
+}
+

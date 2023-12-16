@@ -1,25 +1,19 @@
-import { NS } from "@ns";
+import { NS, Server } from "@ns";
 import { EARLY_HACK_SCRIPT, GROW_SCRIPT, HACK_SCRIPT, WEAKEN_SCRIPT } from "lib/contants";
 import { getAllServers, getHackableServers } from "lib/scan";
 import { executeHacks, nuke } from "lib/hacks";
 import { copyServerFiles, getBestServerToHack } from "lib/servers";
-import { printServerStats } from "./lib/metrics";
+import { BatchTask } from "lib/BatchTask";
+import { schedule } from "scheduler";
 
 
 export async function main(ns: NS): Promise<void> {
-  ns.disableLog("getHackingLevel");
-  ns.disableLog("getServerMaxRam");
-  ns.disableLog("getServerUsedRam");
-  ns.disableLog("getServerMaxMoney");
-  ns.disableLog("getServerMinSecurityLevel");
-  ns.disableLog("getServerSecurityLevel");
-
+  let allServers = await getAllServers(ns);
   let sleepTime = 3000;
+  let tasks: BatchTask[] = [];
   while (true) {
-    let allServers = await getAllServers(ns);
-    let serverToHack = await getBestServerToHack(ns, await getHackableServers(ns)) || { hostname: "n00dles" };
+    let serverToHack = await getBestServerToHack(ns, await getHackableServers(ns)) || { hostname: "n00dles" } as Server;
     ns.tprint(`identified ${serverToHack.hostname} as best server to hack`);
-    printServerStats(ns, serverToHack.hostname);
     for (let server of allServers) {
       let hostname = server.hostname;
       copyServerFiles(ns, hostname);
@@ -29,6 +23,7 @@ export async function main(ns: NS): Promise<void> {
       }
 
       if (ns.hasRootAccess(hostname)) {
+        ns.tprint(`starting to hack ${serverToHack.hostname} from ${hostname}`);
         let ramAvailable = ns.getServerMaxRam(hostname) - ns.getServerUsedRam(hostname);
         let ramPerThread = ns.getScriptRam(WEAKEN_SCRIPT);
         let maxThreads = Math.floor(ramAvailable / ramPerThread);
@@ -36,21 +31,20 @@ export async function main(ns: NS): Promise<void> {
         let securtiyThreshold = ns.getServerMinSecurityLevel(serverToHack.hostname) + 5;
         if (serverToHack && maxThreads > 0) {
           if (ns.getServerSecurityLevel(serverToHack.hostname) > securtiyThreshold) {
-            ns.weakenAnalyze(maxThreads)
             sleepTime = ns.getWeakenTime(serverToHack.hostname);
-            ns.exec(WEAKEN_SCRIPT, hostname, maxThreads, serverToHack.hostname);
+            tasks.push(new BatchTask(WEAKEN_SCRIPT, serverToHack, maxThreads));
           } else if (ns.getServerMoneyAvailable(serverToHack.hostname) < moneyThreshold) {
             sleepTime = ns.getGrowTime(serverToHack.hostname);
-            ns.exec(GROW_SCRIPT, hostname, maxThreads, serverToHack.hostname);
+            tasks.push(new BatchTask(GROW_SCRIPT, serverToHack, maxThreads));
           } else {
             sleepTime = ns.getHackTime(serverToHack.hostname);
-            ns.exec(HACK_SCRIPT, hostname, maxThreads, serverToHack.hostname);
+            tasks.push(new BatchTask(HACK_SCRIPT, serverToHack, maxThreads));
           }
         }
       }
     }
 
-
+    await schedule(ns, tasks);
     await ns.sleep(sleepTime + 100);
   }
 

@@ -28,9 +28,8 @@ export async function getHacks(ns: NS): Promise<HackFile[]> {
 
 export async function executeHacks(ns: NS, server: Server): Promise<void> {
   let hackFiles = await getHacks(ns);
-
   hackFiles.forEach(hackFile => {
-    if (server.numOpenPortsRequired && hackFiles.length >= server.numOpenPortsRequired) {
+    if (hackFiles.length >= (server.numOpenPortsRequired as number) && (server.requiredHackingSkill as number) < ns.getHackingLevel()) {
       ns.tprint(`You don't have root access to ${server.hostname}. Trying to hack now with ${hackFile.fileName}`);
       hackFile.command(server.hostname);
     }
@@ -38,10 +37,8 @@ export async function executeHacks(ns: NS, server: Server): Promise<void> {
 }
 
 export async function nuke(ns: NS, server: Server): Promise<void> {
-  if (server.openPortCount && server.numOpenPortsRequired && server.openPortCount >= server.numOpenPortsRequired) {
+  if ((server.openPortCount as number) >= (server.numOpenPortsRequired as number)) {
     ns.nuke(server.hostname);
-  } else {
-    ns.print(`${server.hostname}: ${server.openPortCount}/${server.numOpenPortsRequired} ports open`);
   }
 }
 

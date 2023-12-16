@@ -87,7 +87,7 @@ export async function getBestServerToHack(ns: NS, servers: Server[]): Promise<Se
 
   ns.print(`First server: ${JSON.stringify(firstItem, null, 2)}\nRate: ${firstRate * 100}`);
   ns.print(`Last server: ${JSON.stringify(lastItem, null, 2)}\nRate: ${lastRate * 100}`);
-
+  calcServers.forEach((server, index) => ns.tprint(`${index}: ${server.hostname}`));
   return calcServers.filter(server => ns.hasRootAccess(server.hostname))[0];
 }
 

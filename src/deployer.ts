@@ -7,12 +7,7 @@ import { printServerStats } from "./lib/metrics";
 
 
 export async function main(ns: NS): Promise<void> {
-  ns.disableLog("getHackingLevel");
-  ns.disableLog("getServerMaxRam");
-  ns.disableLog("getServerUsedRam");
-  ns.disableLog("getServerMaxMoney");
-  ns.disableLog("getServerMinSecurityLevel");
-  ns.disableLog("getServerSecurityLevel");
+  ns.disableLog("ALL");
 
   let sleepTime = 3000;
   while (true) {

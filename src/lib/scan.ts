@@ -21,7 +21,6 @@ export async function getAllServers(ns: NS): Promise<Server[]> {
     }
 
     processedQueue = processedQueue.filter((server) => server !== "home");
-
     return processedQueue.map(s => ns.getServer(s));
 }
 

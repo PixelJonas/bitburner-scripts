@@ -24,7 +24,3 @@ export async function getAllServers(ns: NS, includeHome = false): Promise<Server
     }
     return processedQueue.map(s => ns.getServer(s));
 }
-
-export async function getHackableServers(ns: NS): Promise<Server[]> {
-    return (await getAllServers(ns)).filter((server) => server.hostname.indexOf(PURCHASED_SERVER_PREFIX) === -1);
-}

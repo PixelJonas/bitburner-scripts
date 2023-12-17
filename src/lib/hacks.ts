@@ -38,6 +38,7 @@ export async function executeHacks(ns: NS, server: Server): Promise<void> {
 
 export async function nuke(ns: NS, server: Server): Promise<void> {
   if ((server.openPortCount as number) >= (server.numOpenPortsRequired as number)) {
+    ns.print(`INFO: Nuking ${server.hostname} (${server.openPortCount}/${server.numOpenPortsRequired} ports open)`);
     ns.nuke(server.hostname);
   }
 }

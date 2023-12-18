@@ -305,7 +305,7 @@ export function getNetworkServers(ns, root: string = HOME_SERVER, visit: Set<str
 }
 
 export function getHackableNetworkServers(ns: NS): Array<NetworkServer> {
-  return getNetworkServers(ns).filter(server => server.weight() > 0).sort((a, b) => b.weight() - a.weight());
+  return getNetworkServers(ns).filter(server => server.getHackingWeight() > 0).sort((a, b) => b.getHackingWeight() - a.getHackingWeight());
 }
 /**
  * Nuke as many world servers as possible.
@@ -360,4 +360,9 @@ export function shortest_path(ns: NS, source: string, target: string): Array<str
   }
 
   return graph.shortest_path(source, target, ns);
+}
+
+export function connect_to_server(ns: NS, target: string) {
+  let path = shortest_path(ns, HOME_SERVER, target);
+  
 }

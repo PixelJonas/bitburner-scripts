@@ -1,15 +1,16 @@
 import { NS, ProcessInfo, Server } from "@ns";
-import { getAllServers, getHackableServers } from "./lib/scan";
+import { getAllServers } from "./lib/scan";
 import { copyServerFiles, getBestServerToHack } from "./lib/servers";
 import { printServerStats } from "./lib/metrics";
 import { executeHacks, nuke } from "./lib/hacks";
+import { getHackableNetworkServers } from "./lib/interfaces/Network";
 
 export async function main(ns: NS): Promise<void> {
   let sleepTime = 300000;
   let pid = 0;
   while (true) {
     let allServers = await getAllServers(ns, true);
-    let serverToHack = await getBestServerToHack(ns, await getHackableServers(ns)) || { hostname: "n00dles" };
+    let serverToHack = getHackableNetworkServers(ns)[0];
     printServerStats(ns, serverToHack.hostname);
 
     let instances = findInstances(ns, allServers);

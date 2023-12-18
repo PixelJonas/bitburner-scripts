@@ -1,0 +1,1 @@
+export type HGWAction = "grow" | "weaken" | "hack";

@@ -10,7 +10,7 @@ export async function printServerStats(ns: NS, target: string): Promise<void> {
   let currentSecurityLevel = ns.getServerSecurityLevel(target);
   let maxMoney = ns.getServerMaxMoney(target);
   let currentMoney = ns.getServerMoneyAvailable(target);
-  ns.tprint(`${target}: ${usedMemory}GB/${maxMemory}GB RAM | ${currentMoney.toExponential(2)}$/${maxMoney.toExponential(2)}$ | ${currentSecurityLevel}/${minSecurityLevel} Security Level`);
+  ns.tprint(`${target}: ${ns.formatRam(usedMemory)}GB/${ns.formatRam(maxMemory)}GB RAM | ${ns.formatNumber(currentMoney)}$/${ns.formatNumber(maxMoney)}$ | ${ns.formatNumber(currentSecurityLevel)}}/${ns.formatNumber(minSecurityLevel)} Security Level`);
 }
 
 export async function getFreeRAMBotNet(ns: NS): Promise<BotNetStats> {
@@ -24,7 +24,7 @@ export async function getFreeRAMBotNet(ns: NS): Promise<BotNetStats> {
     used += server.ramUsed;
     free = total - used;
   }
-  total -= MIN_HOME_RAM;
+  total -= MIN_HOME_RAM(ns);
   let freePercentage = (free / total * 100).toFixed(2);
   return {
     total,
@@ -43,7 +43,7 @@ export async function printBotNetStats(ns: NS) {
   let attackedServers = await getAttackedServers(ns);
   ns.tprint(`------ Currently Attacked Servers (${attackedServers.length}) ------`);
   for (let server of attackedServers) {
-    ns.tprint(`${server.hostname} | ${server.ramUsed}GB/${server.maxRam}GB | $${server.moneyAvailable?.toExponential(2)}/$${server.moneyMax?.toExponential(2)} | ${server.hackDifficulty?.toFixed(2)}/${server.minDifficulty}`);
+    ns.tprint(`${server.hostname} | ${ns.formatRam(server.ramUsed)}GB/${ns.formatRam(server.maxRam)}GB | $${ns.formatNumber(server.moneyAvailable)}/$${ns.formatNumber(server.moneyMax)} | ${ns.formatNumber(server.hackDifficulty)}/${ns.formatNumber(server.minDifficulty)}`);
   }
   ns.tprint(`------ Currently Attacked Servers ------`);
 }

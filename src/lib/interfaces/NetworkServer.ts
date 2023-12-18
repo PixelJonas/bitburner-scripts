@@ -9,17 +9,12 @@ export class NetworkServer {
   /**
    * The hostname of this server.
    */
-  #hostname: string;
+  hostname: string;
 
   /**
    * The Netscript API.
    */
   #ns: NS;
-
-  /**
-   * The Netscript Server Object
-   */
-  #server: Server;
 
   /**
    * A weight score for this server representing the value of hacking
@@ -33,10 +28,9 @@ export class NetworkServer {
    * @param {string} host The hostname of a server.
    */
   constructor(ns: NS, host: string) {
-    this.#server = ns.getServer(host);
-    this.#hostname = this.#server.hostname;
+    this.hostname = host;
     this.#ns = ns;
-    this.#hackingWeight = weight(ns, this.#server);
+    this.#hackingWeight = weight(ns, host);
   }
 
   /**
@@ -77,10 +71,10 @@ export class NetworkServer {
 
     // Copy our script over to this server.  Use the server to hack the
     // target.
-    this.#ns.scp(script, this.hostname(), HOME_SERVER);
+    this.#ns.scp(script, this.hostname, HOME_SERVER);
     const option = { preventDuplicates: true, threads: nthread };
 
-    return this.#ns.exec(script, this.hostname(), option, targ.hostname);;
+    return this.#ns.exec(script, this.hostname, option, targ.hostname);;
   }
 
   /**
@@ -90,16 +84,11 @@ export class NetworkServer {
    *     false otherwise.
    */
   has_root_access(): boolean {
-    return this.#ns.getServer(this.hostname()).hasAdminRights;
+    return this.#ns.getServer(this.hostname).hasAdminRights;
   }
 
-  /**
-   * The hostname of this server.
-   *
-   * @returns {string} This server's hostname.
-   */
-  hostname(): string {
-    return this.#hostname;
+  getHackingWeight() {
+    return this.#hackingWeight;
   }
 
   /**
@@ -115,22 +104,22 @@ export class NetworkServer {
 
     // Open all required ports and nuke the server.
     try {
-      this.#ns.brutessh(this.hostname());
+      this.#ns.brutessh(this.hostname);
     } catch { }
     try {
-      this.#ns.ftpcrack(this.hostname());
+      this.#ns.ftpcrack(this.hostname);
     } catch { }
     try {
-      this.#ns.httpworm(this.hostname());
+      this.#ns.httpworm(this.hostname);
     } catch { }
     try {
-      this.#ns.relaysmtp(this.hostname());
+      this.#ns.relaysmtp(this.hostname);
     } catch { }
     try {
-      this.#ns.sqlinject(this.hostname());
+      this.#ns.sqlinject(this.hostname);
     } catch { }
     try {
-      this.#ns.nuke(this.hostname());
+      this.#ns.nuke(this.hostname);
       return true;
     } catch {
       assert(!this.has_root_access());
@@ -158,7 +147,7 @@ export class NetworkServer {
    * @returns {number} The largest amount of RAM on this server.
    */
   ram_max(): number {
-    return this.#ns.getServer(this.hostname()).maxRam;
+    return this.#ns.getServer(this.hostname).maxRam;
   }
 
   /**
@@ -167,7 +156,7 @@ export class NetworkServer {
    * @returns {number} Amount of used RAM.
    */
   ram_used(): number {
-    return this.#ns.getServer(this.hostname()).ramUsed;
+    return this.#ns.getServer(this.hostname).ramUsed;
   }
 
   /**
@@ -192,20 +181,11 @@ export class NetworkServer {
 
     // Copy our share script over to this server and share its RAM with a
     // faction.
-    this.#ns.scp(SHARE_FOREVER_SCRIPT, this.hostname(), HOME_SERVER);
+    this.#ns.scp(SHARE_FOREVER_SCRIPT, this.hostname, HOME_SERVER);
     const option = { preventDuplicates: true, threads: nthread };
-    this.#ns.exec(SHARE_FOREVER_SCRIPT, this.hostname(), option);
+    this.#ns.exec(SHARE_FOREVER_SCRIPT, this.hostname, option);
     return true;
   }
-
-  weight() {
-    return this.#hackingWeight;
-  }
-
-  server() {
-    return this.#server;
-  }
-
   /**
    * Prints stats for this server to the script log
    *
@@ -221,17 +201,24 @@ export class NetworkServer {
    */
   getReport(): Array<string> {
     let report: Array<string> = [];
+    if (this.#hackingWeight == 0) {
+      this.#hackingWeight = weight(this.#ns, this.hostname);
+    }
+    let server = this.#ns.getServer(this.hostname);
     report.push('');
-    report.push(`${this.#hostname} (Weight: ${this.#hackingWeight})`);
-    report.push(`INFO: Money    : ${this.#ns.formatNumber(this.#server.moneyAvailable)} / ${this.#ns.formatNumber(this.#server.moneyMax)} (${(this.#server.moneyAvailable / this.#server.moneyMax * 100).toFixed(2)}%)`);
-    report.push(`INFO: Security : ${(this.#server.hackDifficulty - this.#server.minDifficulty).toFixed(2)}`);
-    report.push(`INFO: Weaken   : ${this.#ns.formatNumber(this.#ns.getWeakenTime(this.#hostname))}`);
-    report.push(`INFO: Grow     : ${this.#ns.formatNumber(this.#ns.getGrowTime(this.#hostname))}`);
-    report.push(`INFO: Hack     : ${this.#ns.formatNumber(this.#ns.getHackTime(this.#hostname))}`);
+    report.push(`${this.hostname} (Weight: ${this.#ns.formatNumber(this.#hackingWeight)})`);
+    report.push(`INFO: Money    : ${this.#ns.formatNumber(server.moneyAvailable)} / ${this.#ns.formatNumber(server.moneyMax)} (${(server.moneyAvailable / server.moneyMax * 100).toFixed(2)}%)`);
+    report.push(`INFO: Security : ${(server.hackDifficulty - server.minDifficulty).toFixed(2)}`);
+    report.push(`INFO: Weaken   : ${this.#ns.formatNumber(this.#ns.getWeakenTime(this.hostname))}`);
+    report.push(`INFO: Grow     : ${this.#ns.formatNumber(this.#ns.getGrowTime(this.hostname))}`);
+    report.push(`INFO: Hack     : ${this.#ns.formatNumber(this.#ns.getHackTime(this.hostname))}`);
     report.push('');
     return report;
   }
 
+  getNS(): NS {
+    return this.#ns;
+  }
 
 }
 
@@ -293,17 +280,19 @@ export function num_threads(ns: NS, script: string, host: string): number {
 }
 
 
-function weight(ns: NS, server: Server): number {
+function weight(ns: NS, hostname: string): number {
   let player = ns.getPlayer();
+  let server = ns.getServer(hostname);
   server.hackDifficulty = server.minDifficulty;
 
   if (server.requiredHackingSkill > player.skills.hacking) return 0;
+  if (!server.hasAdminRights) return 0;
 
   let weight = server.moneyMax / server.minDifficulty;
 
   if (hasFormulas(ns)) {
     weight = server.moneyMax / ns.formulas.hacking.weakenTime(server, player) * ns.formulas.hacking.hackChance(server, player);
-  } else if (server.requiredHackingSkill > player.skills.hacking / 2 && server.hostname != "n00dles") {
+  } else if (server.requiredHackingSkill > (player.skills.hacking / 2) && server.hostname != "n00dles") {
     return 0;
   }
   return weight

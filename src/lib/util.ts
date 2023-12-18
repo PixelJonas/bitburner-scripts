@@ -63,3 +63,8 @@ export function formatNumber(num: number, to_fixed: boolean = false): string {
 export function hasFormulas(ns: NS): boolean {
   try { ns.formulas.hacknetNodes.constants(); return true; } catch { return false; }
 }
+
+export function createSequence(num: number): Array<number> {
+  const n = Math.floor(num);
+  return n > 0 ? [...Array(n).keys()] : [];
+}

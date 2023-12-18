@@ -1,7 +1,8 @@
-import { Server } from "@ns";
+import { BasicHGWOptions, NS, RunOptions, Server } from "@ns";
 import { MemoryMap } from "lib/interfaces/Ram";
+import { GROW_SCRIPT, HOME_SERVER, WEAKEN_SCRIPT } from "lib/contants";
 
-export function RunScript(ns, scriptName, threads, params, allowSpread, allowPartial, servers: Server[]) {
+export function RunScript(ns: NS, scriptName: string, threads: number, params: any[], allowSpread: boolean, allowPartial: boolean, servers: Server[]) {
   let ramMap = new MemoryMap(ns, false, servers);
 
   // Find script RAM usage
@@ -16,6 +17,7 @@ export function RunScript(ns, scriptName, threads, params, allowSpread, allowPar
   let unique = 0;
 
   while (fired < threads) {
+    ramMap = new MemoryMap(ns, false, servers);
     let candidate = ramMap.getBiggestBlock();
 
     let maxThreads = Math.floor(candidate / ram);
@@ -27,16 +29,17 @@ export function RunScript(ns, scriptName, threads, params, allowSpread, allowPar
     let server: Server = ramMap.getReserveBlock(blockSize);
 
     let coreBonus = 1;
-
-    if (scriptName.startsWith('grow') || scriptName.startsWith('weaken')) {
+    if (GROW_SCRIPT == scriptName || WEAKEN_SCRIPT == scriptName) {
       let homeBlock = ramMap.getHomeBlock();
-      if (homeBlock != undefined && homeBlock.coreBonus > 1 && threads * ram < homeBlock.free - homeBlock.reserved) {
+      let homeServer = ns.getServer(HOME_SERVER);
+
+      if (homeBlock != undefined && homeBlock.coreBonus > 1 && threads * ram < homeServer.maxRam - homeServer.ramUsed) {
         if (server.hostname == 'home') {
-          //ns.tprint('INFO: Favoring home for');
+          //ns.tprint(`INFO: Favoring home for ${scriptName} with ${threads}`);
         }
         else {
           server.hostname = 'home';
-          //ns.tprint('INFO: Spawning grow on home for bonus!');
+          ns.print(`INFO: Spawning ${scriptName} on home for bonus!`);
         }
         coreBonus = homeBlock.coreBonus;
       }
@@ -52,7 +55,7 @@ export function RunScript(ns, scriptName, threads, params, allowSpread, allowPar
 
       let pid = ns.exec(scriptName, server.hostname, actualThreads, ...params, performance.now() + unique++);
       if (pid > 0) {
-        ns.print('Started script ' + scriptName + ' on ' + server.hostname + ' with ' + actualThreads + ' threads');
+        //ns.print('Started script ' + scriptName + ' on ' + server.hostname + ' with ' + actualThreads + ' threads');
         pids.push(pid);
         fired += maxThreads;
       }
@@ -62,10 +65,12 @@ export function RunScript(ns, scriptName, threads, params, allowSpread, allowPar
     }
     else if (!allowPartial) {
       // Couldn't find a block big enough so can't allowPartial
+      ns.print(`WARN: No Partials allowed, but no single Server has enough RAM to fit ${scriptName}`);
       break;
     }
     else if (!allowSpread) {
       // Couldn't find a block big enough and cannot allowSpread
+      ns.print(`WARN: No Spread allowed, but no single Server has enough RAM to fit ${scriptName} with ${threads}`);
       break;
     }
 

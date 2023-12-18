@@ -48,7 +48,7 @@ export class MemoryMap {
         block.coreBonus = 1 + (server.cpuCores - 1) / 16;
 
         if (server.hostname == 'home') {
-          let minFree = MIN_HOME_RAM;
+          let minFree = MIN_HOME_RAM(ns);
           if (free < minFree) {
             minFree = free;
           }
